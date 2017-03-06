@@ -36,7 +36,11 @@
 
   function sendJSONXMLHTTPRequest(url, objects, callback) {
     var xhr = new XMLHttpRequest();
-    xhr.open("POST", url);
+    if (objects == null) { // get the world
+      xhr.open("GET", url);
+    } else {
+      xhr.open("POST", url);
+    }
     xhr.onreadystatechange = function () {
       if (xhr.readyState == 4) {
         try {
@@ -52,32 +56,15 @@
         }
       }
     };
-    // based off code example contributors: ydiev, teoli, joeyparrish, G07cha, freaktechnik, MashKao, Sebastianz, and jsx on https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/send
-    xhr.setRequestHeader("Content-Type", "application/json");
-    xhr.setRequestHeader("Accept", "application/json");
-    xhr.send(JSON.stringify(objects));
-  }
-
-  function getWorldXMLHTTPRequest(url, callback) {
-    var xhr = new XMLHttpRequest();
-    xhr.open("GET", url);
-    xhr.onreadystatechange = function () {
-      if (xhr.readyState == 4) {
-        try {
-          if (xhr.status == 200) {
-            //XXX: parse some JSON from the request!
-            var data = JSON.parse(xhr.responseText);
-            //XXX: Pass the data to the callback!
-            callback(data);
-          }
-        }
-        catch (e) {
-          alert('Error: ' + e.name);
-        }
-      }
-    };
-    xhr.setRequestHeader("Accept", "application/json");
-    xhr.send(null);
+    if (objects == null) {
+      xhr.setRequestHeader("Accept", "application/json");
+      xhr.send(null);
+    } else {
+      // based off code example contributors: ydiev, teoli, joeyparrish, G07cha, freaktechnik, MashKao, Sebastianz, and jsx on https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/send
+      xhr.setRequestHeader("Content-Type", "application/json");
+      xhr.setRequestHeader("Accept", "application/json");
+      xhr.send(JSON.stringify(objects));
+    }
   }
 
   world = {};
@@ -86,7 +73,7 @@
   function drawCircle(context, entity) {
     with (context) {
       beginPath();
-      lineWidth = 3;
+      lineWidth = 4;
       var x = entity["x"];
       var y = entity["y"];
       //moveTo(x,y);
@@ -99,7 +86,7 @@
 
   function prepEntity(entity) {
     if (!entity["colour"]) {
-      entity["colour"] = "#FF0000";
+      entity["colour"] = "#FE7004";
     }
     if (!entity["radius"]) {
       entity["radius"] = 50;
@@ -275,24 +262,24 @@
   // Add the application specific mouse listeners!
   //XXX: TODO Make these prettier!
   mouse.mousedowners.push(function (x, y, clicked, e) {
-    addEntityWithoutName({'x': x, 'y': y, 'colour': 'blue'});
+    addEntityWithoutName({'x': x, 'y': y, 'colour': '#67F59D'});
   });
 
   mouse.mouseuppers.push(function (x, y, clicked, e) {
-    addEntityWithoutName({'x': x, 'y': y, 'colour': 'red'});
+    addEntityWithoutName({'x': x, 'y': y, 'colour': '#68F9FE'});
   });
 
   mouse.mousedraggers.push(function (x, y, clicked, e) {
     addEntityWithoutName({
-      'x': x, 'y': y, 'colour': 'green',
-      'radius': 10
+      'x': x, 'y': y, 'colour': '#EF56F8',
+      'radius': 25
     });
   });
 
 
   function update() {
     //XXX: TODO Get the world from the webservice using a XMLHTTPRequest
-    getWorldXMLHTTPRequest('/world', function (json_payload) {
+    sendJSONXMLHTTPRequest('/world', null, function (json_payload) {
       world = json_payload;
       drawNextFrame();
       drawFrame();
