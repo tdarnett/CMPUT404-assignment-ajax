@@ -22,10 +22,12 @@
 
 
 import flask
-from flask import Flask, request
+from flask import Flask, request, redirect, url_for, Response
 import json
+
 app = Flask(__name__)
 app.debug = True
+
 
 # An example world
 # {
@@ -36,9 +38,9 @@ app.debug = True
 class World:
     def __init__(self):
         self.clear()
-        
+
     def update(self, entity, key, value):
-        entry = self.space.get(entity,dict())
+        entry = self.space.get(entity, dict())
         entry[key] = value
         self.space[entity] = entry
 
@@ -49,15 +51,17 @@ class World:
         self.space = dict()
 
     def get(self, entity):
-        return self.space.get(entity,dict())
-    
+        return self.space.get(entity, dict())
+
     def world(self):
         return self.space
+
 
 # you can test your webservice from the commandline
 # curl -v   -H "Content-Type: appication/json" -X PUT http://127.0.0.1:5000/entity/X -d '{"x":1,"y":1}' 
 
-myWorld = World()          
+myWorld = World()
+
 
 # I give this to you, this is how you get the raw body/data portion of a post in flask
 # this should come with flask but whatever, it's not my project.
@@ -71,30 +75,51 @@ def flask_post_json():
     else:
         return json.loads(request.form.keys()[0])
 
+
 @app.route("/")
 def hello():
     '''Return something coherent here.. perhaps redirect to /static/index.html '''
-    return None
+    # from Flask API docs - http://flask.pocoo.org/docs/0.12/api/#flask.redirect and http://flask.pocoo.org/docs/0.12/quickstart/#url-building accessed March 4, 2017
+    return redirect(url_for("static", filename="index.html"))
 
-@app.route("/entity/<entity>", methods=['POST','PUT'])
+
+@app.route("/entity/<entity>", methods=['POST', 'PUT'])
 def update(entity):
     '''update the entities via this interface'''
-    return None
+    # get raw data from post/put
+    json_payload = flask_post_json()
 
-@app.route("/world", methods=['POST','GET'])    
+    if request.method == 'POST':
+        for k in json_payload:
+            myWorld.update(entity, k, json_payload[k])
+
+    else:
+        myWorld.set(entity, json_payload)
+
+    # entity in world
+    entity_world_instance = myWorld.get(entity)
+    return flask.jsonify(entity_world_instance), 200
+
+
+@app.route("/world", methods=['POST', 'GET'])
 def world():
     '''you should probably return the world here'''
-    return None
+    return flask.jsonify(myWorld.world()), 200
 
-@app.route("/entity/<entity>")    
+
+@app.route("/entity/<entity>")
 def get_entity(entity):
     '''This is the GET version of the entity interface, return a representation of the entity'''
-    return None
+    return flask.jsonify(myWorld.get(entity)), 200
 
-@app.route("/clear", methods=['POST','GET'])
+
+@app.route("/clear", methods=['POST', 'GET'])
 def clear():
     '''Clear the world out!'''
-    return None
+    # must return a response
+    myWorld.clear()
+    return Response("world cleared!", 200)
+
 
 if __name__ == "__main__":
     app.run()
